@@ -461,25 +461,306 @@ Without `?next=`:
 
 ### Part 8  User Profile and Picture
 ![alt text](image.png)
+OR
+## Part 8 — User Profile and Picture
+
+### 0. Goal
+
+-> Each user should have:
+
+* profile page
+* profile picture
+* extra data (not inside default User model)
+
+---
+
+### 1. Profile Model (One-to-One relation)
+
+`users/models.py`
+
+```python
+from django.db import models
+from django.contrib.auth.models import User
+
+class Profile(models.Model):
+    user = models.OneToOneField(User, on_delete=models.CASCADE)
+    image = models.ImageField(default='default.jpg', upload_to='profile_pics')
+
+    def __str__(self):
+        return f'{self.user.username} Profile'
+```
+
+---
+
+### Why `__str__` is used
+
+```python
+def __str__(self):
+```
+
+👉 Controls how object is displayed in:
+
+* Django admin
+* shell
+
+Without it:
+
+```
+Profile object (1) ❌
+```
+
+With it:
+
+```
+ArnavF Profile ✅
+```
+
+---
+
+### Why OneToOneField
+
+```python
+user = models.OneToOneField(User)
+```
+
+👉 Each user → exactly ONE profile
+👉 Extends default Django User model cleanly
+
+---
+
+### 2. Migrations
+
+You must apply changes to database:
+
+```bash
+pip install pillow   # required for ImageField
+
+python manage.py makemigrations
+python manage.py migrate
+```
+
+---
+
+### Why Pillow?
+
+👉 Django cannot handle images without it
+👉 `ImageField` depends on Pillow internally
+
+---
+
+### 3. Test in Shell
+
+```bash
+python manage.py shell
+```
+
+```python
+from django.contrib.auth.models import User
+
+user = User.objects.filter(username='ArnavF').first()
+user.profile
+user.profile.image
+user.profile.image.url
+```
+
+👉 This proves:
+
+* Profile is linked automatically
+* Image works
+
+---
+
+### 4. Media Settings (`settings.py`)
+
+```python
+import os
+
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+MEDIA_URL = '/media/'
+```
+
+---
+
+### Why this is needed
+
+* Uploaded images are NOT static files
+* Django needs:
+
+  * where to store → `MEDIA_ROOT`
+  * how to access → `MEDIA_URL`
+
+---
+
+### 5. Profile Template
+
+`users/templates/users/profile.html`
+
+```html
+{% extends "blog/base.html" %}
+
+{% block content %}
+<div class="content-section">
+    <div class="media">
+        <img class="rounded-circle account-img" src="{{ user.profile.image.url }}">
+        <div class="media-body">
+            <h2 class="account-heading">{{ user.username }}</h2>
+            <p class="text-secondary">{{ user.email }}</p>
+        </div>
+    </div>
+</div>
+{% endblock %}
+```
+
+---
+
+### 6. Add Media URL Handling
+
+`django_project/urls.py`
+
+```python
+from django.conf import settings
+from django.conf.urls.static import static
+
+if settings.DEBUG:
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+```
+
+---
+
+### Why this is needed
+
+👉 During development:
+
+* Django does NOT serve media files automatically
+* This line tells Django:
+  “Serve images from /media/ folder”
+
+👉 Without this:
+
+* images won’t load in browser ❌
+
+---
+
+### 7. Signals (important concept)
+
+Create `users/signals.py`
+
+```python
+from django.db.models.signals import post_save
+from django.contrib.auth.models import User
+from django.dispatch import receiver
+from .models import Profile
+
+@receiver(post_save, sender=User)
+def create_profile(sender, instance, created, **kwargs):
+    if created:
+        Profile.objects.create(user=instance)
+
+@receiver(post_save, sender=User)
+def save_profile(sender, instance, **kwargs):
+    instance.profile.save()
+```
+
+---
+
+### Why signals are needed
+
+Problem:
+👉 When a new User is created → Profile is NOT automatically created
+
+Solution:
+👉 Signals listen to events
+
+* `post_save` → runs after user is saved
+* `create_profile` → creates Profile automatically
+* `save_profile` → keeps it updated
+
+---
+
+### Without signals
+
+```python
+user.profile ❌ (error)
+```
+
+### With signals
+
+```python
+user.profile ✅ works automatically
+```
+
+---
+
+### 8. Connect signals (`apps.py`)
+
+`users/apps.py`
+
+```python
+class UsersConfig(AppConfig):
+    name = "users"
+
+    def ready(self):
+        import users.signals
+```
+
+---
+
+### Why this is required
+
+👉 Django won’t run signals unless they are imported
+
+`ready()` ensures:
+
+* signals are loaded when app starts
+
+---
+
+### 9. Default Image
+
+Place:
+
+```id="e4q7tr"
+media/default.jpg
+```
+
+👉 Used when user has no uploaded image
+
+---
+
+### Final Flow
+
+1. User registers
+2. Signal creates Profile automatically
+3. Default image assigned
+4. User visits profile page
+5. Image + data displayed
+
+---
+
+### Common mistakes I made
+
+* forgot Pillow → ImageField crashes
+* forgot signals → `user.profile` error
+* forgot media URL → image not loading
+* wrong path for default image
+
+---
+
+### Core Understanding (important)
+
+* User model = authentication
+* Profile model = extra data
+* OneToOne = extension
+* Signals = automation
+* Media = user-uploaded content
+
+---
+
 
 ```That covers everything in Part 8 cleanly. A few things worth locking in mentally before moving on:
 Signals are the trickiest part here. The pattern — "run my code when Django's built-in code does something" — comes up a lot. The apps.py import is easy to forget and it'll silently break things (no error, profiles just won't get created).
 The if settings.DEBUG media URL line is dev-only scaffolding. Don't carry it into production thinking it's how media files work. It isn't.
 OneToOneField vs ForeignKey — a common confusion point. ForeignKey allows one user → many profiles. OneToOneField enforces exactly one. You always want OneToOneField for user profiles.
 ```
-0:22 - profile model, one to one relationship
-3:06 - image field
-3:47 - _str_ method
-4:56 - migration
-5:44 - install Pillow
-6:36 - add profile to admin page
-9:06 - interact with profile on shell
-12:41 - setting media root, media url
-18:22 - profile template
-20:57 - add media route into project url pattern
-24:38 - upload default.jpg
-26:20 - django signals
-32:10 - import signals into ready function of apps.py
-
 
 
