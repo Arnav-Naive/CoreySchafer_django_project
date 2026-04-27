@@ -458,3 +458,47 @@ Without `?next=`:
 * forgot `login_required`
 
 ---
+
+### Part 8  User Profile and Picture
+
+
+
+0:22 - profile model, one to one relationship
+3:06 - image field
+3:47 - _str_ method
+4:56 - migration
+5:44 - install Pillow
+6:36 - add profile to admin page
+9:06 - interact with profile on shell
+12:41 - setting media root, media url
+18:22 - profile template
+20:57 - add media route into project url pattern
+24:38 - upload default.jpg
+26:20 - django signals
+32:10 - import signals into ready function of apps.py
+
+* python .\manage.py shell
+14 objects imported automatically (use -v 2 for details).
+
+Ctrl click to launch VS Code Native REPL
+Python 3.13.5 (tags/v3.13.5:6cb20a2, Jun 11 2025, 16:15:46) [MSC v.1943 64 bit (AMD64)] on win32
+Type "help", "copyright", "credits" or "license" for more information.
+(InteractiveConsole)
+>>> from django.contrib.auth.models import User 
+>>> user = User.objects.filter(username='ArnavF').first()
+>>> user
+<User: ArnavF>
+>>> user.profile
+<Profile: ArnavF Profile>
+>>> user.profile.image
+<ImageFieldFile: profile_pics/jinx-neon-art-5k-5120x2880-19854.jpg>
+>>> user.profile.image.width
+5120
+>>> user.profile.image.url  
+'/profile_pics/jinx-neon-art-5k-5120x2880-19854.jpg'
+>>> user = User.objects.filter(username='TestUser').first()
+>>> user
+<User: TestUser>
+>>> user.profile.image
+<ImageFieldFile: default.jpg>
+>>> exit()
