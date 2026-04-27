@@ -460,9 +460,13 @@ Without `?next=`:
 ---
 
 ### Part 8  User Profile and Picture
+![alt text](image.png)
 
-
-
+```That covers everything in Part 8 cleanly. A few things worth locking in mentally before moving on:
+Signals are the trickiest part here. The pattern — "run my code when Django's built-in code does something" — comes up a lot. The apps.py import is easy to forget and it'll silently break things (no error, profiles just won't get created).
+The if settings.DEBUG media URL line is dev-only scaffolding. Don't carry it into production thinking it's how media files work. It isn't.
+OneToOneField vs ForeignKey — a common confusion point. ForeignKey allows one user → many profiles. OneToOneField enforces exactly one. You always want OneToOneField for user profiles.
+```
 0:22 - profile model, one to one relationship
 3:06 - image field
 3:47 - _str_ method
@@ -477,28 +481,5 @@ Without `?next=`:
 26:20 - django signals
 32:10 - import signals into ready function of apps.py
 
-* python .\manage.py shell
-14 objects imported automatically (use -v 2 for details).
 
-Ctrl click to launch VS Code Native REPL
-Python 3.13.5 (tags/v3.13.5:6cb20a2, Jun 11 2025, 16:15:46) [MSC v.1943 64 bit (AMD64)] on win32
-Type "help", "copyright", "credits" or "license" for more information.
-(InteractiveConsole)
->>> from django.contrib.auth.models import User 
->>> user = User.objects.filter(username='ArnavF').first()
->>> user
-<User: ArnavF>
->>> user.profile
-<Profile: ArnavF Profile>
->>> user.profile.image
-<ImageFieldFile: profile_pics/jinx-neon-art-5k-5120x2880-19854.jpg>
->>> user.profile.image.width
-5120
->>> user.profile.image.url  
-'/profile_pics/jinx-neon-art-5k-5120x2880-19854.jpg'
->>> user = User.objects.filter(username='TestUser').first()
->>> user
-<User: TestUser>
->>> user.profile.image
-<ImageFieldFile: default.jpg>
->>> exit()
+
