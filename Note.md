@@ -764,3 +764,20 @@ OneToOneField vs ForeignKey — a common confusion point. ForeignKey allows one 
 ```
 
 
+### Part 9      Update user profile
+
+1. forms.py 
+--User update form,Profile update form
+
+2. views.py
+
+3. profile.html
+
+4. views.py
+ (instance...)
+
+ 5. resize image
+ models.py
+
+6. display the image of the author besides each post
+home.html
