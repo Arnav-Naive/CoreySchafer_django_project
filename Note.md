@@ -763,21 +763,223 @@ The if settings.DEBUG media URL line is dev-only scaffolding. Don't carry it int
 OneToOneField vs ForeignKey — a common confusion point. ForeignKey allows one user → many profiles. OneToOneField enforces exactly one. You always want OneToOneField for user profiles.
 ```
 
+## Part 9 — Update User Profile
 
-### Part 9      Update user profile
+### 0. Goal
 
-1. forms.py 
---User update form,Profile update form
+-> Allow user to:
 
-2. views.py
+* update username/email
+* update profile image
 
-3. profile.html
+---
 
-4. views.py
- (instance...)
+### 1. Forms (`users/forms.py`)
 
- 5. resize image
- models.py
+We split forms because:
 
-6. display the image of the author besides each post
-home.html
+* User data → `User` model
+* Profile data → `Profile` model
+
+```python id="9v8p0c"
+from django import forms
+from django.contrib.auth.models import User
+from .models import Profile
+
+class UserUpdateForm(forms.ModelForm):
+    email = forms.EmailField()
+
+    class Meta:
+        model = User
+        fields = ['username', 'email']
+
+
+class ProfileUpdateForm(forms.ModelForm):
+    class Meta:
+        model = Profile
+        fields = ['image']
+```
+
+---
+
+### Why two forms?
+
+👉 One model cannot handle both:
+
+* User fields
+* Profile image
+
+So we use:
+
+```id="q4k1gh"
+UserUpdateForm + ProfileUpdateForm
+```
+
+---
+
+### 2. View Logic (`views.py`)
+
+```python id="r7m3zs"
+if request.method == 'POST':
+    u_form = UserUpdateForm(request.POST, instance=request.user)
+
+    p_form = ProfileUpdateForm(
+        request.POST,
+        request.FILES,
+        instance=request.user.profile
+    )
+
+    if u_form.is_valid() and p_form.is_valid():
+        u_form.save()
+        p_form.save()
+        messages.success(request, 'Your account has been updated!')
+        return redirect('profile')
+
+else:
+    u_form = UserUpdateForm(instance=request.user)
+    p_form = ProfileUpdateForm(instance=request.user.profile)
+
+context = {
+    'u_form': u_form,
+    'p_form': p_form
+}
+
+return render(request, 'users/profile.html', context)
+```
+
+---
+
+### Critical concept (you skipped this)
+
+```python id="m2ph1y"
+instance=request.user
+```
+
+👉 This means:
+
+* UPDATE existing user
+* NOT create new user
+
+Without this:
+👉 duplicate users will be created ❌
+
+---
+
+### Why `request.FILES`?
+
+```python id="fjh3l7"
+request.FILES
+```
+
+👉 Required for file uploads (image)
+
+Without it:
+
+* image won’t upload
+* form silently fails
+
+---
+
+### 3. Template (`profile.html`)
+
+```html id="1gh4kq"
+<form method="POST" enctype="multipart/form-data">
+    {% csrf_token %}
+
+    <fieldset class="form-group">
+        <legend>Profile Info</legend>
+        {{ u_form|crispy }}
+        {{ p_form|crispy }}
+    </fieldset>
+
+    <button type="submit">Update</button>
+</form>
+```
+
+---
+
+### Why `enctype` is critical
+
+```html id="2c92yo"
+enctype="multipart/form-data"
+```
+
+👉 Without this:
+
+* file upload = broken ❌
+
+---
+
+### 4. Image Resize (Model level)
+
+`models.py`
+
+```python id="b6zv0m"
+from PIL import Image
+
+def save(self, *args, **kwargs):
+    super().save(*args, **kwargs)
+
+    img = Image.open(self.image.path)
+
+    if img.height > 300 or img.width > 300:
+        img.thumbnail((300, 300))
+        img.save(self.image.path)
+```
+
+---
+
+### Why resize?
+
+Without this:
+
+* users upload 5MB+ images
+* slows site
+* wastes storage
+
+---
+
+### 5. Display profile image in posts
+
+`home.html`
+
+```html id="5o0z8j"
+<img class="rounded-circle article-img" src="{{ post.author.profile.image.url }}">
+```
+
+---
+
+### Why this works
+
+```python id="9b3k4x"
+post → author → profile → image
+```
+
+Chain:
+
+* Post → User
+* User → Profile
+* Profile → Image
+
+---
+
+### Final flow
+
+1. User opens profile page
+2. Form pre-filled using `instance=`
+3. User updates info + uploads image
+4. Form submits → POST
+5. Data saved
+6. Image resized
+7. UI updates everywhere
+
+---
+
+### Core understanding (real takeaway)
+
+* Forms = bridge between HTML and models
+* `instance=` = update vs create
+* `FILES` + `enctype` = required for uploads
+* Image resize = performance control
+
+---
