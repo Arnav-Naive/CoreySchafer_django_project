@@ -985,20 +985,258 @@ Chain:
 ---
 
 ##  Part 10 - Class based views,View,Update,Delete using this views(Create,Update,Delete Posts)
-0:25 - explain class-based view
-2:28 - list view
-5:54 - template for class-based view
-7:59 - ordering attribute
-10:39 - detail view
-11:38 - route contain variable
-19:28 - create, update, delete view
-24:19 - override form valid method
-26:34 - create get_absolute_url method in model
-31:25 - login mixin
-32:28 - update view
-35:34 - user passes test mixin, test_func
-39:04 - delete view
-45:19 - success url
+## Part 10 — Class-Based Views (CRUD for Posts)
+
+### 0. Why Class-Based Views (CBV)?
+
+-> Instead of writing repetitive functions
+-> Django gives ready-made classes for common patterns
+
+Examples:
+
+* ListView → show list
+* DetailView → show single object
+* CreateView → create object
+* UpdateView → update
+* DeleteView → delete
+
+---
+
+### 1. List View (Home Page)
+
+```python id="1qv7xk"
+class PostListView(ListView):
+    model = Post
+    template_name = 'blog/home.html'
+    context_object_name = 'posts'
+    ordering = ['-date_posted']
+```
+
+---
+
+### Why this matters
+
+* Automatically fetches all posts
+* Sends them to template as `posts`
+* Sorted newest → oldest
+
+---
+
+### 2. Detail View (Single Post)
+
+```python id="hx4b0x"
+class PostDetailView(DetailView):
+    model = Post
+```
+
+URL:
+
+```python id="0u8m6j"
+path('post/<int:pk>/', PostDetailView.as_view(), name='post-detail')
+```
+
+---
+
+### Why `<int:pk>`?
+
+👉 Django uses primary key to fetch object automatically
+
+---
+
+### 3. get_absolute_url (IMPORTANT)
+
+```python id="o5tx0k"
+def get_absolute_url(self):
+    return reverse('post-detail', kwargs={'pk': self.pk})
+```
+
+---
+
+### Why needed
+
+After create/update:
+👉 Django needs to know **where to redirect**
+
+Without this:
+❌ Error OR no redirect
+
+---
+
+### 4. Create View
+
+```python id="0uqj9z"
+class PostCreateView(LoginRequiredMixin, CreateView):
+    model = Post
+    fields = ['title', 'content']
+
+    def form_valid(self, form):
+        form.instance.author = self.request.user
+        return super().form_valid(form)
+```
+
+---
+
+### Why override `form_valid`
+
+👉 Author is not in form
+👉 You manually attach logged-in user
+
+---
+
+### 5. LoginRequiredMixin
+
+```python id="w6rg6c"
+LoginRequiredMixin
+```
+
+👉 Prevents anonymous users from:
+
+* creating posts
+* updating
+* deleting
+
+---
+
+### 6. Update View
+
+```python id="v2o7pq"
+class PostUpdateView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
+    model = Post
+    fields = ['title', 'content']
+
+    def form_valid(self, form):
+        form.instance.author = self.request.user
+        return super().form_valid(form)
+```
+
+---
+
+### Why `UserPassesTestMixin`
+
+👉 Only author should edit post
+
+```python id="h3s4pw"
+def test_func(self):
+    post = self.get_object()
+    return self.request.user == post.author
+```
+
+---
+
+### 7. Delete View
+
+```python id="a9g7kl"
+class PostDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
+    model = Post
+    success_url = '/'
+```
+
+---
+
+### Why `success_url`
+
+👉 After delete, object no longer exists
+👉 So redirect manually
+
+---
+
+### 8. Templates
+
+#### Detail page
+
+```html id="6m8h3a"
+{{ object.title }}
+{{ object.content }}
+```
+
+👉 Django sends object automatically
+
+---
+
+#### Show update/delete only to author
+
+```html id="t2r7qp"
+{% if object.author == user %}
+    <a href="{% url 'post-update' object.id %}">Update</a>
+    <a href="{% url 'post-delete' object.id %}">Delete</a>
+{% endif %}
+```
+
+---
+
+#### Delete confirmation
+
+```html id="l8u3mw"
+<form method="POST">
+    {% csrf_token %}
+    <button type="submit">Yes, Delete</button>
+</form>
+```
+
+---
+
+### 9. Form Template (Create/Update shared)
+
+```html id="4cx7hk"
+{{ form|crispy }}
+```
+
+👉 Django auto-uses:
+
+```id="y2t4vl"
+post_form.html
+```
+
+---
+
+### 10. Flow (important)
+
+#### Create
+
+1. User submits form
+2. `form_valid()` runs
+3. Author assigned
+4. Redirect → `get_absolute_url()`
+
+---
+
+#### Update
+
+1. Existing object loaded
+2. User edits
+3. Saved
+4. Redirect → same post
+
+---
+
+#### Delete
+
+1. Confirmation page
+2. POST submit
+3. Object deleted
+4. Redirect → `success_url`
+
+---
+
+### Common mistakes
+
+* ❌ duplicate URL paths
+* ❌ forgetting `get_absolute_url`
+* ❌ forgetting `LoginRequiredMixin`
+* ❌ forgetting `test_func` → anyone can edit/delete
+* ❌ not setting author in `form_valid`
+
+---
+
+### Core understanding (this is the real takeaway)
+
+* CBVs = reusable patterns
+* Mixins = permission control
+* `form_valid` = inject custom logic
+* `get_absolute_url` = redirect control
+
+---
+
 
 
 ## Part 11 -
