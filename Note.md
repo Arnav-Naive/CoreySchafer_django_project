@@ -983,3 +983,24 @@ Chain:
 * Image resize = performance control
 
 ---
+
+##  Part 10 - Class based views,View,Update,Delete using this views(Create,Update,Delete Posts)
+0:25 - explain class-based view
+2:28 - list view
+5:54 - template for class-based view
+7:59 - ordering attribute
+10:39 - detail view
+11:38 - route contain variable
+19:28 - create, update, delete view
+24:19 - override form valid method
+26:34 - create get_absolute_url method in model
+31:25 - login mixin
+32:28 - update view
+35:34 - user passes test mixin, test_func
+39:04 - delete view
+45:19 - success url
+
+
+## Part 11 -
+- paginate our site ->so that our post are brokenup into diff pages
+- how to create page for specific user's post
