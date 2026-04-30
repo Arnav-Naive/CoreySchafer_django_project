@@ -1461,137 +1461,100 @@ self.kwargs['username']
 - so django has built in functionality that genreate a secure token - only a specific user can reset there password
 - then we will see how we can send email at django that has instructions for userr to reset there password
 
-1. django_project/urls.py
-path('password-reset/', 
-         auth_views.PasswordResetView.as_view(template_name='users/password_reset.html'), 
-         name='password_reset'),
+# Part 12 - Email and Password Reset
 
-2. users -> password_reset.html
+## What We Built
+Full password reset flow using Django's built-in auth views + real Gmail SMTP.
 
-3. again urls.py 
-path('password-reset/done/', 
-         auth_views.PasswordResetDoneView.as_view(template_name='users/password_reset_done.html'), 
-         name='password_reset_done'),
+---
 
-4. password_reset_done.html
-{% extends "blog/base.html" %}
-{% load crispy_forms_tags %}
-{% block content %}
-    <div class="alert alert-info">
-        An email has been sent with instructions to reset your password.
-    </div>
-{% endblock content %}
+## Flow
+User clicks "Forgot Password?" → fills email → gets email → clicks link → sets new password → done.
 
-5. error(in CoreyMS video part 12 -says> 
-reverse for  'password_reset_confirm' not found 'password_reset_confirm' is not a valid function or pattern name
-password_reset_email.html
-somthing porotocol : done {% uidb64=uid token=token %})
+---
 
-(i dont get it why i dont get this error in my localhost , it directly sent me to http://localhost:8000/password-reset/ )
+## 1. URLs (django_project/django_project/urls.py)
+Added 4 paths using Django's built-in auth views:
 
-6. urls.py again 
-path('password-reset-confirm/<uidb64>/<token>/', 
-         auth_views.PasswordResetConfirmView.as_view(template_name='users/password_reset_confirm.html'), 
-         name='password_reset_confirm'),
- 
-- > i did add this path anyway
+path('password-reset/', PasswordResetView → password_reset.html)
+path('password-reset/done/', PasswordResetDoneView → password_reset_done.html)
+path('password-reset-confirm/<uidb64>/<token>/', PasswordResetConfirmView → password_reset_confirm.html)
+path('password-reset-complete/', PasswordResetCompleteView → password_reset_complete.html)
 
-but he still gets error of ConnectionRefuseError at/password-reset .....
+---
 
-then he go to his browser and typed : Google app passwords 
-. he was saying somthing about 2factor authetication
-- u can create password specifically for trhe appliction taht u want to sign in for
-. - he already did all that
+## 2. Templates (users/templates/users/)
+4 templates created:
 
+- password_reset.html → form to enter email
+- password_reset_done.html → "email has been sent" message
+- password_reset_confirm.html → form to enter new password
+- password_reset_complete.html → "password has been set" + login link
 
-then he did:
-settings.py
+Also added "Forgot Password?" link in login.html:
+<a href="{% url 'password_reset' %}">Forgot Password?</a>
+
+---
+
+## 3. Gmail App Password Setup
+1. Go to myaccount.google.com → Security
+2. 2-Step Verification must be ON
+3. App Passwords → name it "Django" → Create
+4. Copy the 16-character password (shown only once, don't close without copying)
+5. DON'T DELETE IT or you have to regenerate and update .env
+
+My Gmail: arnavfating09@gmail.com
+
+---
+
+## 4. .env (django_project/.env — sits next to manage.py)
+EMAIL_USER=arnavfating09@gmail.com
+EMAIL_PASS=vlozpsqskeclodxw
+
+IMPORTANT:
+- .env is in .gitignore — never push to GitHub
+- Don't delete the Django app password from Google or this breaks
+
+---
+
+## 5. settings.py Changes
+
+### Top of file:
+import os
+from dotenv import load_dotenv
+from pathlib import Path
+load_dotenv()
+
+### Bottom of file:
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 EMAIL_HOST = 'smtp.gmail.com'
 EMAIL_PORT = 587
 EMAIL_USE_TLS = True
-(then he said :  now u need to apss in ur usename an dpass , now for the user and pass i am not going to actually type tjose for obvious reasons, i dont want anyone to acces my email so for thsi in formatiojn i push this in envirnmonet variable)
-to acces these 
+EMAIL_HOST_USER = os.environ.get('EMAIL_USER')
+EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_PASS')
 
--> then it worked for him 
-    Reset Password page opened after clicking on mail link
+---
 
-    then got error 
+## 6. Install Dependency
+pip install python-dotenv
 
-    the fixed by doingg 
-     in django_project/urls.py 
-    
-    i will just share the file :
-```"""
-URL configuration for django_project project.
+---
 
-The `urlpatterns` list routes URLs to views. For more information please see:
-    https://docs.djangoproject.com/en/6.0/topics/http/urls/
-Examples:
-Function views
-    1. Add an import:  from my_app import views
-    2. Add a URL to urlpatterns:  path('', views.home, name='home')
-Class-based views
-    1. Add an import:  from other_app.views import Home
-    2. Add a URL to urlpatterns:  path('', Home.as_view(), name='home')
-Including another URLconf
-    1. Import the include() function: from django.urls import include, path
-    2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
-"""
-
-from django.contrib import admin
-from django.contrib.auth import views as auth_views
-from django.urls import path, include
-from users import views as user_views
-from django.conf import settings
-from django.conf.urls.static import static
-
-urlpatterns = [
-    path("admin/", admin.site.urls),
-    path('register/', user_views.register, name='register'),
-    path('profile/', user_views.profile, name='profile'),
-    path('login/', auth_views.LoginView.as_view(template_name='users/login.html'), name='login'),
-    path('logout/', auth_views.LogoutView.as_view(template_name='users/logout.html'), name='logout'),
-    
-    path('password-reset/', 
-         auth_views.PasswordResetView.as_view(template_name='users/password_reset.html'), 
-         name='password_reset'),
-    
-    path('password-reset/done/', 
-         auth_views.PasswordResetDoneView.as_view(template_name='users/password_reset_done.html'), 
-         name='password_reset_done'),
-    
-    path('password-reset-confirm/<uidb64>/<token>/', 
-         auth_views.PasswordResetConfirmView.as_view(template_name='users/password_reset_confirm.html'), 
-         name='password_reset_confirm'),
-    
-    path('password-reset-complete/', 
-         auth_views.PasswordResetCompleteView.as_view(template_name='users/password_reset_complete.html'), 
-         name='password_reset_complete'),
-    
-    path('', include('blog.urls')),
-]
-
-if settings.DEBUG:
-    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
-```
-
-then made a template in django_project>users>templates>users>password_reset_complate.html
-{% extends "blog/base.html" %}
-{% load crispy_forms_tags %}
-{% block content %}
-    <div class="alert alert-info">
-        Your password has been set.
-    </div>
-    <a href="{% url 'login' %}">Sign In Here</a>
-{% endblock content %}
--> then it worked for him 
+## Important Gotchas Learned
+- Password reset email only sends if submitted email matches a registered user in DB.
+  Django silently redirects to done/ either way (security by design).
+- For local testing only, use console backend (prints email in terminal):
+  EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+- Always restart runserver after changing settings.py
+- Registered user email in DB must match the email you test with.
+  Changed via Django admin panel → Users → ArnavF → Email address.
 
 
-i am still confused what to do how to do so pls guide me (basically when coreyms put his gmail in http://localhost:8000/password-reset/ then he recives mail to reset pass)
 
-i have just done with the concept 
-here is you can do:
+#### ~`*here is you can do:*`
+
+
+
 # Django Password Reset + Gmail SMTP Setup
 
 ## 1. URLs Required (django_project/urls.py)
@@ -1643,8 +1606,7 @@ pip install python-dotenv
 - Never commit .env to GitHub. Add it to .gitignore.
 ------
 
-
-
+----
 #### Here's your note tailored to your project:
 
 # Django Password Reset + Gmail SMTP Setup
