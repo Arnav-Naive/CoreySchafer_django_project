@@ -1239,6 +1239,102 @@ post_form.html
 
 
 
-## Part 11 -
+## Part 11 - Pagination
+
 - paginate our site ->so that our post are brokenup into diff pages
 - how to create page for specific user's post
+
+
+    - pagination working on website
+    - diff ways in which u create the links and handel the logic for those in your application
+    - how to create new list views with coustom  filtered queries
+    - and created a useful route for post  written by specific user
+
+
+    1. (.venv) (base) PS C:\Arnav-Projects\Learning\Corey Schafer Django\django_project> python .\manage.py shell                                                               
+14 objects imported automatically (use -v 2 for details).     
+
+Ctrl click to launch VS Code Native REPL
+Python 3.13.5 (tags/v3.13.5:6cb20a2, Jun 11 2025, 16:15:46) [MSC v.1943 64 bit (AMD64)] on win32
+Type "help", "copyright", "credits" or "license" for more information.
+(InteractiveConsole)
+>>> import json
+>>> from blog.models import Post
+>>> with open('posts.json') as f:
+...     posts_json = json.load(f)
+... 
+>>> 
+>>> for post in posts_json:
+...     post = Post(title=post['title'],content=post['content'], author_id=post['user_id'])
+...     post.save()
+... 
+
+>>> exit()
+now exiting InteractiveConsole...
+
+2. pagination
+
+>>> from django.core.paginator import Paginator
+>>> post = ['1']
+KeyboardInterrupt
+>>>                                            
+>>> post = ['1', '2', '3', '4', '5'] 
+>>> p = Paginator(post, 2)
+>>> p.num_pages
+3
+>>> for page in p.page_range:
+...     print(page)
+... 
+1
+2
+3
+>>> p1 = p.page(1)
+>>> 
+>>> p1
+<Page 1 of 3>
+>>> p1.number
+1
+>>> p1.object_list
+['1', '2']
+>>> p1.has_previous() 
+False
+>>> p1.has_next()
+True
+>>> p1.next_page_number()
+2
+>>> exit()
+
+3. paginaton logic in home.html
+{% if is_paginated %}
+    
+        {% if page_obj.has_previous %}
+            <a class="btn btn-outline-info mb-4" href="?page=1">First</a>
+            <a class="btn btn-outline-info mb-4" href="?page={{ page_obj.previous_page_number }}">Previous</a>
+        {% endif %}
+            
+            {% for num in page_obj.paginator.page_range %}
+                {% if page.obj.number == num %}
+                    <a class="btn btn-info mb-4" href="?page={{ num }}">{{ num }}</a>
+                {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %} 
+                    <a class="btn btn-outline-info mb-4" href="?page={{ num }}">{{ num }}</a>
+                {% endif %}
+            {% endfor %}
+
+            {% if page_obj.has_next %}
+                <a class="btn btn-outline-info mb-4" href="?page={{ page_obj.next_page_number }}">Next</a>
+                <a class="btn btn-outline-info mb-4" href="?page={{ page_obj.paginator.num_pages }}">last</a>
+            {% endif %}
+
+    {% endif %}
+
+4. 
+- views/
+- class UserPostListViews(ListView):
+.
+.
+    def get_queryset(self):
+        .
+        .
+5. urls.py
+
+6. user_post.html
