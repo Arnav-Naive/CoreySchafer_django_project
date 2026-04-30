@@ -1647,3 +1647,53 @@ Make sure .env is in .gitignore — never push it to GitHub.
 ## Testing
 - Registered user email in DB: arnavfating09@gmail.com (changed via admin panel)
 - Reset flow tested and working end to end.
+
+
+------
+------
+------
+# Secret Leaked on GitHub - What To Do
+
+## If repo is PRIVATE
+1. Immediately add .gitignore with .env in it
+2. Never make repo public without cleaning history first
+
+## If repo is PUBLIC (emergency steps)
+1. Immediately go to Google → App Passwords → DELETE the leaked password
+   (This invalidates it instantly — anyone who copied it can no longer use it)
+2. Generate a new App Password
+3. Update .env with new password
+4. Add .gitignore (see below)
+5. Remove .env from git history (see below)
+
+---
+
+## .gitignore (create next to manage.py)
+.env
+*.pyc
+__pycache__/
+db.sqlite3
+media/
+
+---
+
+## Remove .env from entire git history
+Run these commands one by one:
+
+git filter-branch --force --index-filter "git rm --cached --ignore-unmatch .env" --prune-empty --tag-name-filter cat -- --all
+
+git push origin --force --all
+
+WARNING: This rewrites history. If others are working on the repo, 
+tell them to re-clone it after this.
+
+---
+
+## Key Lesson
+.env should NEVER be committed in the first place.
+Always create .gitignore before your first commit in any new project.
+------
+------
+------
+------
+
