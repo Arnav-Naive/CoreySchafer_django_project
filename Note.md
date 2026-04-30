@@ -1455,3 +1455,233 @@ self.kwargs['username']
 * `get_queryset()` = customize data
 
 ---
+
+## Part 12 - Email and password reset
+- we will be learning how to use email to allow users to reset there passwords
+- so django has built in functionality that genreate a secure token - only a specific user can reset there password
+- then we will see how we can send email at django that has instructions for userr to reset there password
+
+1. django_project/urls.py
+path('password-reset/', 
+         auth_views.PasswordResetView.as_view(template_name='users/password_reset.html'), 
+         name='password_reset'),
+
+2. users -> password_reset.html
+
+3. again urls.py 
+path('password-reset/done/', 
+         auth_views.PasswordResetDoneView.as_view(template_name='users/password_reset_done.html'), 
+         name='password_reset_done'),
+
+4. password_reset_done.html
+{% extends "blog/base.html" %}
+{% load crispy_forms_tags %}
+{% block content %}
+    <div class="alert alert-info">
+        An email has been sent with instructions to reset your password.
+    </div>
+{% endblock content %}
+
+5. error(in CoreyMS video part 12 -says> 
+reverse for  'password_reset_confirm' not found 'password_reset_confirm' is not a valid function or pattern name
+password_reset_email.html
+somthing porotocol : done {% uidb64=uid token=token %})
+
+(i dont get it why i dont get this error in my localhost , it directly sent me to http://localhost:8000/password-reset/ )
+
+6. urls.py again 
+path('password-reset-confirm/<uidb64>/<token>/', 
+         auth_views.PasswordResetConfirmView.as_view(template_name='users/password_reset_confirm.html'), 
+         name='password_reset_confirm'),
+ 
+- > i did add this path anyway
+
+but he still gets error of ConnectionRefuseError at/password-reset .....
+
+then he go to his browser and typed : Google app passwords 
+. he was saying somthing about 2factor authetication
+- u can create password specifically for trhe appliction taht u want to sign in for
+. - he already did all that
+
+
+then he did:
+settings.py
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'smtp.gmail.com'
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
+(then he said :  now u need to apss in ur usename an dpass , now for the user and pass i am not going to actually type tjose for obvious reasons, i dont want anyone to acces my email so for thsi in formatiojn i push this in envirnmonet variable)
+to acces these 
+
+-> then it worked for him 
+    Reset Password page opened after clicking on mail link
+
+    then got error 
+
+    the fixed by doingg 
+     in django_project/urls.py 
+    
+    i will just share the file :
+```"""
+URL configuration for django_project project.
+
+The `urlpatterns` list routes URLs to views. For more information please see:
+    https://docs.djangoproject.com/en/6.0/topics/http/urls/
+Examples:
+Function views
+    1. Add an import:  from my_app import views
+    2. Add a URL to urlpatterns:  path('', views.home, name='home')
+Class-based views
+    1. Add an import:  from other_app.views import Home
+    2. Add a URL to urlpatterns:  path('', Home.as_view(), name='home')
+Including another URLconf
+    1. Import the include() function: from django.urls import include, path
+    2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
+"""
+
+from django.contrib import admin
+from django.contrib.auth import views as auth_views
+from django.urls import path, include
+from users import views as user_views
+from django.conf import settings
+from django.conf.urls.static import static
+
+urlpatterns = [
+    path("admin/", admin.site.urls),
+    path('register/', user_views.register, name='register'),
+    path('profile/', user_views.profile, name='profile'),
+    path('login/', auth_views.LoginView.as_view(template_name='users/login.html'), name='login'),
+    path('logout/', auth_views.LogoutView.as_view(template_name='users/logout.html'), name='logout'),
+    
+    path('password-reset/', 
+         auth_views.PasswordResetView.as_view(template_name='users/password_reset.html'), 
+         name='password_reset'),
+    
+    path('password-reset/done/', 
+         auth_views.PasswordResetDoneView.as_view(template_name='users/password_reset_done.html'), 
+         name='password_reset_done'),
+    
+    path('password-reset-confirm/<uidb64>/<token>/', 
+         auth_views.PasswordResetConfirmView.as_view(template_name='users/password_reset_confirm.html'), 
+         name='password_reset_confirm'),
+    
+    path('password-reset-complete/', 
+         auth_views.PasswordResetCompleteView.as_view(template_name='users/password_reset_complete.html'), 
+         name='password_reset_complete'),
+    
+    path('', include('blog.urls')),
+]
+
+if settings.DEBUG:
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+```
+
+then made a template in django_project>users>templates>users>password_reset_complate.html
+{% extends "blog/base.html" %}
+{% load crispy_forms_tags %}
+{% block content %}
+    <div class="alert alert-info">
+        Your password has been set.
+    </div>
+    <a href="{% url 'login' %}">Sign In Here</a>
+{% endblock content %}
+-> then it worked for him 
+
+
+i am still confused what to do how to do so pls guide me (basically when coreyms put his gmail in http://localhost:8000/password-reset/ then he recives mail to reset pass)
+
+i have just done with the concept 
+here is you can do:
+# Django Password Reset + Gmail SMTP Setup
+
+## 1. URLs Required (django_project/urls.py)
+Add all 4 password reset paths:
+- password-reset/
+- password-reset/done/
+- password-reset-confirm/<uidb64>/<token>/
+- password-reset-complete/
+
+## 2. Templates Required (users/templates/users/)
+- password_reset.html
+- password_reset_done.html
+- password_reset_confirm.html
+- password_reset_complete.html
+
+## 3. Gmail Setup
+1. Go to myaccount.google.com → Security
+2. Make sure 2-Step Verification is ON
+3. Go to App Passwords → type any name (e.g. "Django") → Create
+4. Copy the 16-character password shown (only shown once)
+
+## 4. .env file (same folder as manage.py)
+EMAIL_USER=youremail@gmail.com
+EMAIL_PASS=yoursixteencharpassword
+
+## 5. settings.py
+import os
+from dotenv import load_dotenv
+load_dotenv()
+
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'smtp.gmail.com'
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
+EMAIL_HOST_USER = os.environ.get('EMAIL_USER')
+EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_PASS')
+
+## 6. Install python-dotenv if not already
+pip install python-dotenv
+
+## Important Notes
+- For local testing only, use console backend instead of smtp:
+  EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+  (email prints in terminal instead of actually sending)
+
+- Password reset email only sends if the submitted email
+  matches a registered user in the database.
+
+- Never commit .env to GitHub. Add it to .gitignore.
+------
+
+
+
+#### Here's your note tailored to your project:
+
+# Django Password Reset + Gmail SMTP Setup
+## Project: Corey Schafer Django (django_project)
+
+## 1. URLs (django_project/django_project/urls.py)
+All 4 paths already added and working.
+
+## 2. Templates (users/templates/users/)
+All 4 templates already created and working.
+
+## 3. Gmail App Password
+- Gmail: arnavfating09@gmail.com
+- Go to myaccount.google.com → Security → App Passwords
+- Created app named "Django"
+- DON'T DELETE IT or you'll have to regenerate and update .env
+
+## 4. .env file (django_project/.env — next to manage.py)
+EMAIL_USER=arnavfating09@gmail.com
+EMAIL_PASS=vlozpsqskeclodxw
+
+## 5. settings.py changes made
+- Added at top:
+  from dotenv import load_dotenv
+  load_dotenv()
+
+- Added at bottom:
+  EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+  EMAIL_HOST = 'smtp.gmail.com'
+  EMAIL_PORT = 587
+  EMAIL_USE_TLS = True
+  EMAIL_HOST_USER = os.environ.get('EMAIL_USER')
+  EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_PASS')
+
+## 6. .gitignore
+Make sure .env is in .gitignore — never push it to GitHub.
+
+## Testing
+- Registered user email in DB: arnavfating09@gmail.com (changed via admin panel)
+- Reset flow tested and working end to end.
