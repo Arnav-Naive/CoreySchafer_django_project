@@ -1696,4 +1696,171 @@ Always create .gitignore before your first commit in any new project.
 ------
 ------
 ------
+------
 
+# Deployment - Django Blog on Render + Neon PostgreSQL
+## Project: CoreyShafer_django_project
+## Live URL: https://arnav-coreyms-django-blog.onrender.com
+
+---
+
+## Architecture (How It Works)
+```
+Your VS Code (Local)
+      ↓ git push
+GitHub (CoreyShafer_django_project) — PUBLIC repo
+      ↓ auto-deploy
+Render (Web Server - runs gunicorn)
+      ↓ connects to
+Neon (PostgreSQL Database)
+```
+
+- **Code** lives on GitHub
+- **Server** runs on Render (gunicorn serves the Django app)
+- **Database** lives on Neon (PostgreSQL)
+- **Static files** (CSS/JS) served by whitenoise directly from Render
+
+---
+
+## How HTTPS Works
+Render automatically provides SSL (HTTPS) for free on all deployments.
+You don't configure anything — Render handles the certificate.
+That's why the URL starts with `https://` not `http://`.
+
+---
+
+## Accounts Used
+- GitHub: Arnav-Naive (repo: CoreyShafer_django_project) — PUBLIC
+- Render: arnavfating09@gmail.com → https://dashboard.render.com
+- Neon: arnavfating09@gmail.com → https://console.neon.tech
+
+---
+
+## Packages Installed for Deployment
+```
+pip install gunicorn          # production web server
+pip install whitenoise        # serves static files in production
+pip install dj-database-url   # parses DATABASE_URL string
+pip install psycopg2-binary   # PostgreSQL adapter for Django
+```
+
+---
+
+## Settings.py Changes Made
+
+### 1. Imports at top
+```python
+import os
+import dj_database_url
+from dotenv import load_dotenv
+from pathlib import Path
+load_dotenv()
+```
+
+### 2. ALLOWED_HOSTS
+```python
+ALLOWED_HOSTS = ['arnav-coreyms-django-blog.onrender.com']
+```
+
+### 3. MIDDLEWARE — whitenoise added after SecurityMiddleware
+```python
+MIDDLEWARE = [
+    'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',  # added
+    ...
+]
+```
+
+### 4. DATABASES — handles both SQLite (local) and PostgreSQL (production)
+```python
+DATABASES = {
+    'default': dj_database_url.config(
+        default=os.environ.get('DATABASE_URL', f'sqlite:///{BASE_DIR / "db.sqlite3"}'),
+        conn_max_age=600
+    )
+}
+```
+- If DATABASE_URL exists → uses Neon PostgreSQL
+- If DATABASE_URL not set → falls back to SQLite
+
+### 5. Static files
+```python
+STATIC_ROOT = BASE_DIR / 'staticfiles'
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+```
+
+---
+
+## .env File (django_project/.env — next to manage.py)
+```
+SECRET_KEY=django-insecure-r0+o0dm075u)7mgyf)!-o3uolk%z362%=y_ypz)qdwau&mb8)+
+EMAIL_USER=arnavfating09@gmail.com
+EMAIL_PASS=vlozpsqskeclodxw
+# DATABASE_URL=postgresql://neondb_owner:npg_r1GhJ9nHOBkA@ep-muddy-truth-anz9qri2.c-6.us-east-1.aws.neon.tech/neondb?sslmode=require
+```
+DATABASE_URL is commented out locally → uses SQLite
+Render has DATABASE_URL set as environment variable → uses Neon
+
+---
+
+## Render Configuration
+- **Service name:** Arnav_CoreyMS_django-blog
+- **Root Directory:** django_project
+- **Build Command:** pip install -r requirements.txt && python manage.py collectstatic --noinput
+- **Start Command:** gunicorn django_project.wsgi
+- **Instance Type:** Free
+
+### Environment Variables set on Render dashboard:
+```
+SECRET_KEY=...
+EMAIL_USER=arnavfating09@gmail.com
+EMAIL_PASS=vlozpsqskeclodxw
+DATABASE_URL=postgresql://neondb_owner:npg_r1GhJ9nHOBkA@ep-muddy-truth-anz9qri2.c-6.us-east-1.aws.neon.tech/neondb?sslmode=require
+```
+
+---
+
+## Neon PostgreSQL
+- Project: django-blog
+- Region: AWS US East 1
+- Connection string in .env as DATABASE_URL
+- View data: https://console.neon.tech → SQL Editor
+```sql
+SELECT * FROM auth_user;
+SELECT * FROM blog_post;
+```
+
+---
+
+## How to Deploy Code Changes
+Every time you change code locally:
+```
+git add .
+git commit -m "your message"
+git push
+```
+Render auto-deploys on every push. No manual steps needed.
+
+---
+
+## How to Create Superuser on Production DB
+Since Render Shell is paid only, do this locally:
+1. Uncomment DATABASE_URL in .env
+2. Run: python manage.py createsuperuser
+3. Comment DATABASE_URL back out
+
+---
+
+## Free Tier Limits
+- Render: 750 hours/month, 100GB bandwidth, spins down after 15 min inactivity (50 sec cold start)
+- Neon: 0.5GB storage, scales to zero when inactive
+- No credits system — just these limits
+
+---
+
+## Important Notes
+- Render free tier = 1 web service only
+- When deploying MediScan/Job Tracker → delete this service first, deploy that instead
+- .env is in .gitignore — never pushed to GitHub
+- Render reads its own environment variables, NOT your .env file
+- Never make repo private without removing sensitive history first
