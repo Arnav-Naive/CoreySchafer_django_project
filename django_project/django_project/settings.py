@@ -39,6 +39,8 @@ INSTALLED_APPS = [
     'users.apps.UsersConfig',
     'crispy_forms',
     'crispy_bootstrap4',
+    'cloudinary',
+    'cloudinary_storage',
     
     "django.contrib.admin",
     "django.contrib.auth",
@@ -144,3 +146,13 @@ EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_PASS')
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
 STATIC_ROOT = BASE_DIR / 'staticfiles'
+
+import cloudinary
+import cloudinary.uploader
+import cloudinary.api
+
+# CLOUDINARY_STORAGE = {
+#     'CLOUDINARY_URL': os.environ.get('CLOUDINARY_URL')
+# }
+
+# DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
