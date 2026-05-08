@@ -1,0 +1,39 @@
+# Virtual environment
+.venv/
+venv/
+env/
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Environment variables (SECRETS)
+.env
+
+# Database
+*.sqlite3
+db.sqlite3
+
+# Media uploads
+media/
+profile_pics/
+
+# IDE / Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS files
+Thumbs.db
+.DS_Store
+
+# Static files collected for production
+staticfiles/
+
+# Byte-compiled
+*.egg-info/
+dist/
+build/
