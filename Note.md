@@ -2063,3 +2063,59 @@ First request after spin down takes ~50 seconds. After that it's fast.
 - .env must be in .gitignore — never push secrets to GitHub
 - Repo must be PUBLIC for Render free tier (or use Public Git Repository URL)
 - HTTPS is automatic — Render handles SSL certificates
+
+# Part 13 - Using AWS S3 for File Uploads
+1 . need account with AmazonWebServices - sign up
+2. Find Services
+    Type: S3 (simple storage service)
+
+3. create bucket
+.
+.
+.
+ then he created user security credintials
+    User - django_user
+    Access key ID - AKIAIARCV3....
+    Secret access key - ********
+
+    somthing like that
+
+    then opened .bash_profile in his submilme text ide 
+`   export AWS_ACCESS_KEY_ID="AKIAIARCV3...."  `
+`   export AWS_SECRET_ACCESS_KEY="hXodDKfnKNIUDhBD...."    `
+`   export AWS_STORAGE_BUCKET_NAME="djangi-blog-files"     `
+.
+.
+.
+lets now change the django code to use S3 insted of the local file system
+install packeages- boto3(aws django packages),django-storages 
+
+then he made change sto syttings.py file
+`       INSTALLED APPS = ['storages ']      `
+`    AWS_ACCESS_KEY_ID=os.envirn.get(AWS_ACCESS_KEY_ID)         `
+`          AWS_SECRET_ACCESS_KEY=os.envirn.get(AWS_SECRET_ACCESS_KEY)   `
+`AWS_STORAGE_BUCKET_NAME=os.envirn.get(AWS_STORAGE_BUCKET_NAME)`
+
+AWS_S3_FILE_OVERWRITE = False
+AWS_DEFAULT_ACL = None
+
+DEFAULT_FILE_STORAGE = 'sotrages.backends.s3boto3.s3...'
+
+then he commented out/removed this from models.py (users)
+def save(self, *args, **kwargs): 
+        super().save(*args, **kwargs) 
+
+        img = Image.open(self.image.path)
+        
+        if img.height > 300 or img.width > 300:
+            output_size = (300, 300)
+            img.thumbnail(output_size)
+            img.save(self.image.path)
+
+then he did somthis drage the images to asw
+
+then when we opene the image in new tab it compes from https://djnago-blig-files.s3-us-west-2.amazon.com/profile_pic/....
+
+
+what just happed here i just dont get it, is it cloud or smthing... help me with this and tell how to i do this too / is it even important to have to this knowledge no a days and if so tell me,
+give me step by step way...
