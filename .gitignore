@@ -1,39 +1,64 @@
-# Virtual environment
+# ==============================================================================
+# Python / Django Project Gitignore
+# ==============================================================================
+
+# Virtual Environments
 .venv/
 venv/
 env/
+ENV/
+env.bak/
+venv.bak/
 
-# Python cache
-__pycache__/
+# Python Cache & Byte-compiled files
+**/__pycache__/
 *.pyc
 *.pyo
 *.pyd
+.pytest_cache/
+.coverage
+htmlcov/
 
-# Environment variables (SECRETS)
+# Environment Variables & Secrets
 .env
+.env.*
+!.env.example
+secrets.json
 
-# Database
+# Databases
 *.sqlite3
 db.sqlite3
 
-# Media uploads
-media/
-profile_pics/
+# Media uploads & User Generated Content
+**/media/
+**/profile_pics/
 
-# IDE / Editor
+# Static files collected for production
+staticfiles/
+static_root/
+
+# Python packaging & builds
+*.egg-info/
+dist/
+build/
+eggs/
+lib/
+lib64/
+parts/
+sdist/
+develop-eggs/
+downloads/
+
+# IDEs, Editors & OS Files
 .vscode/
 .idea/
 *.swp
 *.swo
-
-# OS files
-Thumbs.db
 .DS_Store
+Thumbs.db
+desktop.ini
 
-# Static files collected for production
-staticfiles/
-
-# Byte-compiled
-*.egg-info/
-dist/
-build/
+# Project Specific & Personal Notes
+Note.md
+notes.md
+*.md.bak
